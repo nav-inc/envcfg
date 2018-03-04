@@ -5,35 +5,35 @@ import (
 	"time"
 )
 
-// The DefaultConverters are functions for converting strings into basic built-in Go types.
+// The defaultConverters are functions for Converting strings into basic built-in Go types.
 // A few types have been omitted: rune (use int32), byte (use uint8), uintptr, complex64, and
 // complex128
-var DefaultConverters = []interface{}{
-	convertBool,
-	convertString,
-	convertInt,
-	convertFloat32,
-	convertFloat64,
-	convertInt8,
-	convertInt16,
-	convertInt32,
-	convertInt64,
-	convertUint,
-	convertUint8,
-	convertUint16,
-	convertUint32,
-	convertUint64,
-	convertDuration,
-	convertTime,
+var defaultConverters = []interface{}{
+	ConvertBool,
+	ConvertString,
+	ConvertInt,
+	ConvertFloat32,
+	ConvertFloat64,
+	ConvertInt8,
+	ConvertInt16,
+	ConvertInt32,
+	ConvertInt64,
+	ConvertUint,
+	ConvertUint8,
+	ConvertUint16,
+	ConvertUint32,
+	ConvertUint64,
+	ConvertDuration,
+	ConvertTime,
 }
 
-var convertBool = strconv.ParseBool
-var convertInt = strconv.Atoi
+var ConvertBool = strconv.ParseBool
+var ConvertInt = strconv.Atoi
 
-func convertString(s string) (string, error)   { return s, nil }
-func convertFloat64(s string) (float64, error) { return strconv.ParseFloat(s, 64) }
+func ConvertString(s string) (string, error)   { return s, nil }
+func ConvertFloat64(s string) (float64, error) { return strconv.ParseFloat(s, 64) }
 
-func convertFloat32(s string) (float32, error) {
+func ConvertFloat32(s string) (float32, error) {
 	f, err := strconv.ParseFloat(s, 32)
 	if err != nil {
 		return 0, err
@@ -41,7 +41,7 @@ func convertFloat32(s string) (float32, error) {
 	return float32(f), nil
 }
 
-func convertInt8(s string) (int8, error) {
+func ConvertInt8(s string) (int8, error) {
 	parsed, err := strconv.ParseInt(s, 0, 8)
 	if err != nil {
 		return 0, err
@@ -49,7 +49,7 @@ func convertInt8(s string) (int8, error) {
 	return int8(parsed), nil
 }
 
-func convertInt16(s string) (int16, error) {
+func ConvertInt16(s string) (int16, error) {
 	parsed, err := strconv.ParseInt(s, 0, 16)
 	if err != nil {
 		return 0, err
@@ -57,7 +57,7 @@ func convertInt16(s string) (int16, error) {
 	return int16(parsed), nil
 }
 
-func convertInt32(s string) (int32, error) {
+func ConvertInt32(s string) (int32, error) {
 	parsed, err := strconv.ParseInt(s, 0, 32)
 	if err != nil {
 		return 0, err
@@ -65,7 +65,7 @@ func convertInt32(s string) (int32, error) {
 	return int32(parsed), nil
 }
 
-func convertInt64(s string) (int64, error) {
+func ConvertInt64(s string) (int64, error) {
 	parsed, err := strconv.ParseInt(s, 0, 64)
 	if err != nil {
 		return 0, err
@@ -73,7 +73,7 @@ func convertInt64(s string) (int64, error) {
 	return parsed, nil
 }
 
-func convertUint(s string) (uint, error) {
+func ConvertUint(s string) (uint, error) {
 	parsed, err := strconv.ParseUint(s, 0, 64)
 	if err != nil {
 		return 0, err
@@ -81,7 +81,7 @@ func convertUint(s string) (uint, error) {
 	return uint(parsed), nil
 }
 
-func convertUint8(s string) (uint8, error) {
+func ConvertUint8(s string) (uint8, error) {
 	parsed, err := strconv.ParseUint(s, 0, 8)
 	if err != nil {
 		return 0, err
@@ -89,7 +89,7 @@ func convertUint8(s string) (uint8, error) {
 	return uint8(parsed), nil
 }
 
-func convertUint16(s string) (uint16, error) {
+func ConvertUint16(s string) (uint16, error) {
 	parsed, err := strconv.ParseUint(s, 0, 16)
 	if err != nil {
 		return 0, err
@@ -97,7 +97,7 @@ func convertUint16(s string) (uint16, error) {
 	return uint16(parsed), nil
 }
 
-func convertUint32(s string) (uint32, error) {
+func ConvertUint32(s string) (uint32, error) {
 	parsed, err := strconv.ParseUint(s, 0, 32)
 	if err != nil {
 		return 0, err
@@ -105,7 +105,7 @@ func convertUint32(s string) (uint32, error) {
 	return uint32(parsed), nil
 }
 
-func convertUint64(s string) (uint64, error) {
+func ConvertUint64(s string) (uint64, error) {
 	parsed, err := strconv.ParseUint(s, 0, 64)
 	if err != nil {
 		return 0, err
@@ -113,6 +113,6 @@ func convertUint64(s string) (uint64, error) {
 	return uint64(parsed), nil
 }
 
-var convertDuration = time.ParseDuration
+var ConvertDuration = time.ParseDuration
 
-func convertTime(s string) (time.Time, error) { return time.Parse(time.RFC3339, s) }
+func ConvertTime(s string) (time.Time, error) { return time.Parse(time.RFC3339, s) }

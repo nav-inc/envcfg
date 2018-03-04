@@ -21,7 +21,7 @@ const (
 // New returns a Loader with the default converters enabled.
 func New() (*Loader, error) {
 	ec := Empty()
-	for _, f := range DefaultConverters {
+	for _, f := range defaultConverters {
 		err := ec.RegisterConverter(f)
 		if err != nil {
 			return nil, err
