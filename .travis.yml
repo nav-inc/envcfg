@@ -1,0 +1,11 @@
+go:
+  - tip
+  - 1.10
+  - 1.9
+  - 1.8
+sudo: false
+language: go
+services:
+  - postgresql    
+addons:
+  postgresql: "9.6" 
