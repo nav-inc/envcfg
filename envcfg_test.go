@@ -2,6 +2,10 @@ package envcfg
 
 import (
 	"errors"
+	"html/template"
+	"net"
+	"net/mail"
+	"net/url"
 	"os"
 	"testing"
 	"time"
@@ -11,50 +15,62 @@ import (
 
 func TestDefaultLoader(t *testing.T) {
 	type bigConfig struct {
-		Untagged int
-		B        bool          `env:"B"`
-		S        string        `env:"S"`
-		SDefault string        `env:"SDEFAULT" default:"AWW YEAH"`
-		I        int           `env:"I"`
-		IDefault int           `env:"SDEFAULT" default:"7"`
-		F32      float32       `env:"F32"`
-		F64      float64       `env:"F64"`
-		I8       int8          `env:"I8"`
-		I16      int16         `env:"I16"`
-		I32      int32         `env:"I32"`
-		I64      int64         `env:"I64"`
-		UI       uint          `env:"UI"`
-		UI8      uint8         `env:"UI8"`
-		UI16     uint16        `env:"UI16"`
-		UI32     uint32        `env:"UI32"`
-		UI64     uint64        `env:"UI64"`
-		Dur      time.Duration `env:"DUR"`
-		When     time.Time     `env:"TIME"`
+		Untagged       int
+		B              bool               `env:"B"`
+		S              string             `env:"S"`
+		SDefault       string             `env:"SDEFAULT" default:"AWW YEAH"`
+		I              int                `env:"I"`
+		IDefault       int                `env:"SDEFAULT" default:"7"`
+		F32            float32            `env:"F32"`
+		F64            float64            `env:"F64"`
+		I8             int8               `env:"I8"`
+		I16            int16              `env:"I16"`
+		I32            int32              `env:"I32"`
+		I64            int64              `env:"I64"`
+		UI             uint               `env:"UI"`
+		UI8            uint8              `env:"UI8"`
+		UI16           uint16             `env:"UI16"`
+		UI32           uint32             `env:"UI32"`
+		UI64           uint64             `env:"UI64"`
+		Dur            time.Duration      `env:"DUR"`
+		When           time.Time          `env:"TIME"`
+		URL            *url.URL           `env:"PUBLIC_URL"`
+		MAC            net.HardwareAddr   `env:"MAC_ADDRESS"`
+		Email          *mail.Address      `env:"EMAIL_ADDRESS"`
+		EmailAddresses []*mail.Address    `env:"EMAIL_ADDRESSES"`
+		Template       *template.Template `env:"GREETING_TEMPLATE"`
 	}
 
 	vals := map[string]string{
-		"B":    "true",
-		"S":    "hi",
-		"I":    "-2",
-		"F32":  "1.23",
-		"F64":  "-3.21",
-		"I8":   "8",
-		"I16":  "16",
-		"I32":  "32",
-		"I64":  "64",
-		"UI":   "3",
-		"UI8":  "4",
-		"UI16": "5",
-		"UI32": "6",
-		"UI64": "7",
-		"DUR":  "2h30m",
-		"TIME": "2017-12-25T00:00:00Z",
+		"B":                 "true",
+		"S":                 "hi",
+		"I":                 "-2",
+		"F32":               "1.23",
+		"F64":               "-3.21",
+		"I8":                "8",
+		"I16":               "16",
+		"I32":               "32",
+		"I64":               "64",
+		"UI":                "3",
+		"UI8":               "4",
+		"UI16":              "5",
+		"UI32":              "6",
+		"UI64":              "7",
+		"DUR":               "2h30m",
+		"TIME":              "2017-12-25T00:00:00Z",
+		"PUBLIC_URL":        "https://www.example.com/",
+		"MAC_ADDRESS":       "01:23:45:67:89:ab:cd:ef:00:00:01:23:45:67:89:ab:cd:ef:00:00",
+		"EMAIL_ADDRESS":     "Brent Tubbs <brent.tubbs@gmail.com>",
+		"EMAIL_ADDRESSES":   "Alice <alice@example.com>, Bob <bob@example.com>, Eve <eve@example.com>",
+		"GREETING_TEMPLATE": "Hello {{.Name}}!",
 	}
 
 	var conf bigConfig
 	err := LoadFromMap(vals, &conf)
 	assert.Nil(t, err)
 	dur, _ := time.ParseDuration("2h30m")
+	mac, _ := net.ParseMAC("01:23:45:67:89:ab:cd:ef:00:00:01:23:45:67:89:ab:cd:ef:00:00")
+	tmpl, _ := template.New("").Parse("Hello {{.Name}}!")
 	expected := bigConfig{
 		Untagged: 0,
 		B:        true,
@@ -75,6 +91,15 @@ func TestDefaultLoader(t *testing.T) {
 		UI64:     7,
 		Dur:      dur,
 		When:     time.Date(2017, time.December, 25, 0, 0, 0, 0, time.UTC),
+		URL:      &url.URL{Scheme: "https", Host: "www.example.com", Path: "/"},
+		MAC:      mac,
+		Email:    &mail.Address{Name: "Brent Tubbs", Address: "brent.tubbs@gmail.com"},
+		EmailAddresses: []*mail.Address{
+			&mail.Address{Name: "Alice", Address: "alice@example.com"},
+			&mail.Address{Name: "Bob", Address: "bob@example.com"},
+			&mail.Address{Name: "Eve", Address: "eve@example.com"},
+		},
+		Template: tmpl,
 	}
 	assert.Equal(t, expected, conf)
 }

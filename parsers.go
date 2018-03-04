@@ -1,6 +1,10 @@
 package envcfg
 
 import (
+	"fmt"
+	"html/template"
+	"net"
+	"net/mail"
 	"net/url"
 	"strconv"
 	"time"
@@ -29,15 +33,32 @@ var DefaultParsers = []interface{}{
 	ParseDuration,
 	ParseTime,
 	ParseURL,
+	ParseMAC,
+	ParseIP,
+	ParseEmailAddress,
+	ParseEmailAddressList,
+	ParseTemplate,
 }
 
 var (
-	ParseBool     = strconv.ParseBool
-	ParseInt      = strconv.Atoi
-	ParseDuration = time.ParseDuration
-	ParseURL      = url.Parse
+	ParseBool             = strconv.ParseBool
+	ParseInt              = strconv.Atoi
+	ParseDuration         = time.ParseDuration
+	ParseURL              = url.Parse
+	ParseMAC              = net.ParseMAC
+	ParseEmailAddress     = mail.ParseAddress
+	ParseEmailAddressList = mail.ParseAddressList
+	ParseTemplate         = template.New("").Parse
 )
 
+func ParseIP(s string) (net.IP, error) {
+	// weirdly, net.ParseIP returns a nil IP if given invalid input, instead of an error.
+	ip := net.ParseIP(s)
+	if ip == nil {
+		return nil, fmt.Errorf("%s is not a valid IP address", s)
+	}
+	return ip, nil
+}
 func ParseTime(s string) (time.Time, error) { return time.Parse(time.RFC3339, s) }
 
 func ParseString(s string) (string, error)   { return s, nil }
