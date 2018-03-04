@@ -3,8 +3,6 @@
 // user-defined struct.
 package envcfg
 
-// TODO: catch panics raised by converters and return them as errors.
-
 import (
 	"fmt"
 	"os"
