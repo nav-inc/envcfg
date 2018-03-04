@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -11,22 +12,24 @@ import (
 func TestDefaultLoader(t *testing.T) {
 	type bigConfig struct {
 		Untagged int
-		B        bool    `env:"B"`
-		S        string  `env:"S"`
-		SDefault string  `env:"SDEFAULT" default:"AWW YEAH"`
-		I        int     `env:"I"`
-		IDefault int     `env:"SDEFAULT" default:"7"`
-		F32      float32 `env:"F32"`
-		F64      float64 `env:"F64"`
-		I8       int8    `env:"I8"`
-		I16      int16   `env:"I16"`
-		I32      int32   `env:"I32"`
-		I64      int64   `env:"I64"`
-		UI       uint    `env:"UI"`
-		UI8      uint8   `env:"UI8"`
-		UI16     uint16  `env:"UI16"`
-		UI32     uint32  `env:"UI32"`
-		UI64     uint64  `env:"UI64"`
+		B        bool          `env:"B"`
+		S        string        `env:"S"`
+		SDefault string        `env:"SDEFAULT" default:"AWW YEAH"`
+		I        int           `env:"I"`
+		IDefault int           `env:"SDEFAULT" default:"7"`
+		F32      float32       `env:"F32"`
+		F64      float64       `env:"F64"`
+		I8       int8          `env:"I8"`
+		I16      int16         `env:"I16"`
+		I32      int32         `env:"I32"`
+		I64      int64         `env:"I64"`
+		UI       uint          `env:"UI"`
+		UI8      uint8         `env:"UI8"`
+		UI16     uint16        `env:"UI16"`
+		UI32     uint32        `env:"UI32"`
+		UI64     uint64        `env:"UI64"`
+		Dur      time.Duration `env:"DUR"`
+		When     time.Time     `env:"TIME"`
 	}
 
 	vals := map[string]string{
@@ -44,11 +47,14 @@ func TestDefaultLoader(t *testing.T) {
 		"UI16": "5",
 		"UI32": "6",
 		"UI64": "7",
+		"DUR":  "2h30m",
+		"TIME": "2017-12-25T00:00:00Z",
 	}
 
 	var conf bigConfig
 	err := LoadFromMap(vals, &conf)
 	assert.Nil(t, err)
+	dur, _ := time.ParseDuration("2h30m")
 	expected := bigConfig{
 		Untagged: 0,
 		B:        true,
@@ -67,6 +73,8 @@ func TestDefaultLoader(t *testing.T) {
 		UI16:     5,
 		UI32:     6,
 		UI64:     7,
+		Dur:      dur,
+		When:     time.Date(2017, time.December, 25, 0, 0, 0, 0, time.UTC),
 	}
 	assert.Equal(t, expected, conf)
 }

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/btubbs/envcfg"
 	_ "github.com/lib/pq"
@@ -15,9 +16,10 @@ func Example() {
 	os.Setenv("DATABASE_URL", "postgres://postgres@/my_app?sslmode=disable")
 
 	type myAppConfig struct {
-		Foo string  `env:"FOO" default:"hey there"`
-		Bar int     `env:"BAR"`
-		DB  *sql.DB `env:"DATABASE_URL"`
+		Foo             string        `env:"FOO" default:"hey there"`
+		Bar             int           `env:"BAR"`
+		DB              *sql.DB       `env:"DATABASE_URL"`
+		RefreshInterval time.Duration `env:"REFRESH_INTERVAL" default:"2h30m"`
 	}
 
 	// envcfg has built in support for Go's built in types, but we need to register our own converter to
@@ -39,6 +41,8 @@ func Example() {
 	}
 	fmt.Println("Foo", conf.Foo)
 	fmt.Println("Bar", conf.Bar)
+	fmt.Println("Refresh Interval", conf.RefreshInterval)
 	// Output: Foo hey there
 	// Bar 321
+	// Refresh Interval 2h30m0s
 }

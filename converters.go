@@ -2,6 +2,7 @@ package envcfg
 
 import (
 	"strconv"
+	"time"
 )
 
 // The DefaultConverters are functions for converting strings into basic built-in Go types.
@@ -22,6 +23,8 @@ var DefaultConverters = []interface{}{
 	convertUint16,
 	convertUint32,
 	convertUint64,
+	convertDuration,
+	convertTime,
 }
 
 var convertBool = strconv.ParseBool
@@ -109,3 +112,7 @@ func convertUint64(s string) (uint64, error) {
 	}
 	return uint64(parsed), nil
 }
+
+var convertDuration = time.ParseDuration
+
+func convertTime(s string) (time.Time, error) { return time.Parse(time.RFC3339, s) }
