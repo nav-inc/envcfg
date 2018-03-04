@@ -104,7 +104,6 @@ func TestDefaultLoader(t *testing.T) {
 	assert.Equal(t, expected, conf)
 }
 
-// registering parsers of the wrong shape
 func TestParserShape(t *testing.T) {
 	type foo struct{}
 	type bar foo
@@ -256,4 +255,21 @@ func TestBadStructs(t *testing.T) {
 		err := LoadFromMap(map[string]string{}, tc.strct)
 		assert.Equal(t, tc.err, err.Error(), tc.desc)
 	}
+}
+
+func TestEnvListToMap(t *testing.T) {
+	ss := []string{
+		"FOO==2",
+		"BAR=2=",
+		"BAZ==",
+		"QUUX=",
+	}
+
+	expected := map[string]string{
+		"FOO":  "=2",
+		"BAR":  "2=",
+		"BAZ":  "=",
+		"QUUX": "",
+	}
+	assert.Equal(t, expected, envListToMap(ss))
 }

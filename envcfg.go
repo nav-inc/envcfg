@@ -157,12 +157,18 @@ func (e *Loader) LoadFromMap(vals map[string]string, c interface{}) error {
 
 // Load loads config from the environment into the provided struct.
 func (e *Loader) Load(c interface{}) error {
-	// os.Environ guarantees that it will return a list of strings in the form a=b.  It's possible for
-	// b to be an empty string.
-	env := map[string]string{}
-	for _, pair := range os.Environ() {
-		parsed := strings.Split(pair, "=")
-		env[parsed[0]] = parsed[1]
+	return e.LoadFromMap(envListToMap(os.Environ()), c)
+}
+
+func envListToMap(ss []string) map[string]string {
+	out := map[string]string{}
+	for _, s := range ss {
+		parsed := strings.SplitN(s, "=", 2)
+		if len(parsed) == 1 {
+			out[parsed[0]] = ""
+		} else {
+			out[parsed[0]] = parsed[1]
+		}
 	}
-	return e.LoadFromMap(env, c)
+	return out
 }
