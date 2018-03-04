@@ -25,9 +25,10 @@ var defaultConverters = []interface{}{
 }
 
 // The default converters are functions for converting strings into basic built-in Go types.
+// These are exported so users can choose to start with a envcfg.Empty() and then pick and choose
+// which of these converters they want to register.
 // A few types have been omitted: rune (use int32 instead), byte (use uint8 instead), uintptr,
-// complex64, and complex128.  These are exported so users can choose to start with a envcfg.Empty()
-// and then pick and choose which of these converters they want to register.
+// complex64, and complex128.
 var (
 	ConvertBool = strconv.ParseBool
 	ConvertInt  = strconv.Atoi
