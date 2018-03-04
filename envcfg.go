@@ -110,6 +110,7 @@ func (e *Loader) RegisterConverter(f interface{}) error {
 	return nil
 }
 
+// LoadFromMap loads config from the provided map into the provided struct.
 func (e *Loader) LoadFromMap(vals map[string]string, c interface{}) error {
 	// assert that c is a struct.
 	pointerType := reflect.TypeOf(c)
@@ -156,6 +157,7 @@ func (e *Loader) LoadFromMap(vals map[string]string, c interface{}) error {
 	return nil
 }
 
+// Load loads config from the environment into the provided struct.
 func (e *Loader) Load(c interface{}) error {
 	// os.Environ guarantees that it will return a list of strings in the form a=b.  It's possible for
 	// b to be an empty string.

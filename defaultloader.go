@@ -22,7 +22,7 @@ func Load(c interface{}) error {
 	return defaultLoader.Load(c)
 }
 
-// Load loads config from the provided map into the provided struct.
+// LoadFromMap loads config from the provided map into the provided struct.
 func LoadFromMap(vals map[string]string, c interface{}) error {
 	return defaultLoader.LoadFromMap(vals, c)
 }
