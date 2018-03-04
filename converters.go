@@ -1,46 +1,49 @@
 package envcfg
 
 import (
+	"net/url"
 	"strconv"
 	"time"
 )
 
-// The default converters are functions for converting strings into basic built-in Go types.
+// The default parsers are functions for converting strings into basic built-in Go types.
 // These are exported so users can choose to start with a envcfg.Empty() and then pick and choose
-// which of these converters they want to register.
+// which of these parsers they want to register.
 // A few types have been omitted: rune (use int32 instead), byte (use uint8 instead), uintptr,
 // complex64, and complex128.
-var DefaultConverters = []interface{}{
-	ConvertBool,
-	ConvertString,
-	ConvertInt,
-	ConvertFloat32,
-	ConvertFloat64,
-	ConvertInt8,
-	ConvertInt16,
-	ConvertInt32,
-	ConvertInt64,
-	ConvertUint,
-	ConvertUint8,
-	ConvertUint16,
-	ConvertUint32,
-	ConvertUint64,
-	ConvertDuration,
-	ConvertTime,
+var DefaultParsers = []interface{}{
+	ParseBool,
+	ParseString,
+	ParseInt,
+	ParseFloat32,
+	ParseFloat64,
+	ParseInt8,
+	ParseInt16,
+	ParseInt32,
+	ParseInt64,
+	ParseUint,
+	ParseUint8,
+	ParseUint16,
+	ParseUint32,
+	ParseUint64,
+	ParseDuration,
+	ParseTime,
+	ParseURL,
 }
 
 var (
-	ConvertBool     = strconv.ParseBool
-	ConvertInt      = strconv.Atoi
-	ConvertDuration = time.ParseDuration
+	ParseBool     = strconv.ParseBool
+	ParseInt      = strconv.Atoi
+	ParseDuration = time.ParseDuration
+	ParseURL      = url.Parse
 )
 
-func ConvertTime(s string) (time.Time, error) { return time.Parse(time.RFC3339, s) }
+func ParseTime(s string) (time.Time, error) { return time.Parse(time.RFC3339, s) }
 
-func ConvertString(s string) (string, error)   { return s, nil }
-func ConvertFloat64(s string) (float64, error) { return strconv.ParseFloat(s, 64) }
+func ParseString(s string) (string, error)   { return s, nil }
+func ParseFloat64(s string) (float64, error) { return strconv.ParseFloat(s, 64) }
 
-func ConvertFloat32(s string) (float32, error) {
+func ParseFloat32(s string) (float32, error) {
 	f, err := strconv.ParseFloat(s, 32)
 	if err != nil {
 		return 0, err
@@ -48,7 +51,7 @@ func ConvertFloat32(s string) (float32, error) {
 	return float32(f), nil
 }
 
-func ConvertInt8(s string) (int8, error) {
+func ParseInt8(s string) (int8, error) {
 	parsed, err := strconv.ParseInt(s, 0, 8)
 	if err != nil {
 		return 0, err
@@ -56,7 +59,7 @@ func ConvertInt8(s string) (int8, error) {
 	return int8(parsed), nil
 }
 
-func ConvertInt16(s string) (int16, error) {
+func ParseInt16(s string) (int16, error) {
 	parsed, err := strconv.ParseInt(s, 0, 16)
 	if err != nil {
 		return 0, err
@@ -64,7 +67,7 @@ func ConvertInt16(s string) (int16, error) {
 	return int16(parsed), nil
 }
 
-func ConvertInt32(s string) (int32, error) {
+func ParseInt32(s string) (int32, error) {
 	parsed, err := strconv.ParseInt(s, 0, 32)
 	if err != nil {
 		return 0, err
@@ -72,7 +75,7 @@ func ConvertInt32(s string) (int32, error) {
 	return int32(parsed), nil
 }
 
-func ConvertInt64(s string) (int64, error) {
+func ParseInt64(s string) (int64, error) {
 	parsed, err := strconv.ParseInt(s, 0, 64)
 	if err != nil {
 		return 0, err
@@ -80,7 +83,7 @@ func ConvertInt64(s string) (int64, error) {
 	return parsed, nil
 }
 
-func ConvertUint(s string) (uint, error) {
+func ParseUint(s string) (uint, error) {
 	parsed, err := strconv.ParseUint(s, 0, 64)
 	if err != nil {
 		return 0, err
@@ -88,7 +91,7 @@ func ConvertUint(s string) (uint, error) {
 	return uint(parsed), nil
 }
 
-func ConvertUint8(s string) (uint8, error) {
+func ParseUint8(s string) (uint8, error) {
 	parsed, err := strconv.ParseUint(s, 0, 8)
 	if err != nil {
 		return 0, err
@@ -96,7 +99,7 @@ func ConvertUint8(s string) (uint8, error) {
 	return uint8(parsed), nil
 }
 
-func ConvertUint16(s string) (uint16, error) {
+func ParseUint16(s string) (uint16, error) {
 	parsed, err := strconv.ParseUint(s, 0, 16)
 	if err != nil {
 		return 0, err
@@ -104,7 +107,7 @@ func ConvertUint16(s string) (uint16, error) {
 	return uint16(parsed), nil
 }
 
-func ConvertUint32(s string) (uint32, error) {
+func ParseUint32(s string) (uint32, error) {
 	parsed, err := strconv.ParseUint(s, 0, 32)
 	if err != nil {
 		return 0, err
@@ -112,7 +115,7 @@ func ConvertUint32(s string) (uint32, error) {
 	return uint32(parsed), nil
 }
 
-func ConvertUint64(s string) (uint64, error) {
+func ParseUint64(s string) (uint64, error) {
 	parsed, err := strconv.ParseUint(s, 0, 64)
 	if err != nil {
 		return 0, err

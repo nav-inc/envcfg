@@ -27,10 +27,10 @@ set in the struct tags:
       RefreshInterval time.Duration `env:"REFRESH_INTERVAL" default:"2h30m"`
     }
 
-    // envcfg has built in support for Go's built in types, but we need to register our own converter to
-    // load other types like *sql.DB.  A converter func takes a string and returns the type matching
+    // envcfg has built in support for Go's built in types, but we need to register our own parser to
+    // load other types like *sql.DB.  A parser func takes a string and returns the type matching
     // your struct field, and an error.
-    envcfg.RegisterConverter(func(s string) (*sql.DB, error) {
+    envcfg.RegisterParser(func(s string) (*sql.DB, error) {
       db, err := sql.Open("postgres", s)
       if err != nil {
         return nil, err
@@ -55,11 +55,11 @@ Note a couple things about that example:
 - envcfg already knows about Go's built-in types like `int`, `string`, etc.  You don't need to tell
   it how to turn "123" into the `int` field on your config struct.
 - It also knows how to turn a duration string into a time.Duration.  envcfg doesn't have built-in 
-  converters for all standard library types yet, but feel free to make a ticket if there's one you'd
+  parsers for all standard library types yet, but feel free to make a ticket if there's one you'd
   like to see added.
 - If your struct has a type that envcfg doesn't know how to convert to, you can tell it.  In the example
   above we register a function that takes a `DATABASE_URL` and turns it into a connection to a
-  Postgres database.  You can register converters for struct types, pointers to struct types,
+  Postgres database.  You can register parsers for struct types, pointers to struct types,
   arrays, and custom types like `type MyInt int`.
 
 If you want to provide your own map of values instead of reading environment variables, there's also
@@ -85,11 +85,11 @@ control you can instantiate your own loader (or multiple loaders) using envcfg.N
 
     err = ec.Load(&conf)
 
-If you want a loader without any of the default converters registered, you can get one by calling
+If you want a loader without any of the default parsers registered, you can get one by calling
 `envcfg.Empty()`:
 
     ec := envcfg.Empty()
-    err := ec.RegisterConverter(myConverterFunc)
+    err := ec.RegisterParser(myParserFunc)
     if err != nil {
       return err
     }

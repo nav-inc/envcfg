@@ -22,10 +22,10 @@ func Example() {
 		RefreshInterval time.Duration `env:"REFRESH_INTERVAL" default:"2h30m"`
 	}
 
-	// envcfg has built in support for Go's built in types, but we need to register our own converter to
-	// load other types like *sql.DB.  A converter func takes a string and returns the type matching
+	// envcfg has built in support for Go's built in types, but we need to register our own parser to
+	// load other types like *sql.DB.  A parser func takes a string and returns the type matching
 	// your struct field, and an error.
-	envcfg.RegisterConverter(func(s string) (*sql.DB, error) {
+	envcfg.RegisterParser(func(s string) (*sql.DB, error) {
 		db, err := sql.Open("postgres", s)
 		if err != nil {
 			return nil, err

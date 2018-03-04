@@ -16,11 +16,11 @@ const (
 	defaultTag = "default"
 )
 
-// New returns a Loader with the default converters enabled.
+// New returns a Loader with the default parsers enabled.
 func New() (*Loader, error) {
 	ec := Empty()
-	for _, f := range DefaultConverters {
-		err := ec.RegisterConverter(f)
+	for _, f := range DefaultParsers {
+		err := ec.RegisterParser(f)
 		if err != nil {
 			return nil, err
 		}
@@ -28,28 +28,28 @@ func New() (*Loader, error) {
 	return ec, nil
 }
 
-// Empty returns a Loader without any converters enabled.
+// Empty returns a Loader without any parsers enabled.
 func Empty() *Loader {
 	ec := &Loader{}
-	ec.converters = map[reflect.Type]converter{}
+	ec.parsers = map[reflect.Type]parser{}
 	return ec
 }
 
-// Our internal converter func takes a string and returns a reflect.Value and an error.  Funcs of
-// this type wrap the default converters and user-provided converters that return arbitrary types.
-type converter func(string) (reflect.Value, error)
+// Our internal parser func takes a string and returns a reflect.Value and an error.  Funcs of
+// this type wrap the default parsers and user-provided parsers that return arbitrary types.
+type parser func(string) (reflect.Value, error)
 
 // Loader is a helper for reading values from environment variables (or a map[string]string),
 // converting them to Go types, and setting their values to fields on a user-provided struct.
 type Loader struct {
 	// a map from reflect types to functions that can take a string and return a
 	// reflect value of that type.
-	converters map[reflect.Type]converter
+	parsers map[reflect.Type]parser
 }
 
-// RegisterConverter takes a func (string) (<anytype>, error) and registers it on the Loader as
-// the converter for <anytype>
-func (e *Loader) RegisterConverter(f interface{}) error {
+// RegisterParser takes a func (string) (<anytype>, error) and registers it on the Loader as
+// the parser for <anytype>
+func (e *Loader) RegisterParser(f interface{}) error {
 	// alright, let's inspect this f and make sure it's a func (string) (sometype, err)
 	t := reflect.TypeOf(f)
 	if t.Kind() != reflect.Func {
@@ -60,31 +60,31 @@ func (e *Loader) RegisterConverter(f interface{}) error {
 	// f should accept one argument
 	if t.NumIn() != 1 {
 		return fmt.Errorf(
-			"envcfg: converter should accept 1 string argument. %v accepts %d arguments",
+			"envcfg: parser should accept 1 string argument. %v accepts %d arguments",
 			fname, t.NumIn())
 	}
 	// it should be a string argument
 	if t.In(0) != reflect.TypeOf("") {
 		return fmt.Errorf(
-			"envcfg: converter should accept a string argument. %s accepts a %v argument",
+			"envcfg: parser should accept a string argument. %s accepts a %v argument",
 			fname, t.In(0))
 	}
 	// it should return two things
 	if t.NumOut() != 2 {
 		return fmt.Errorf(
-			"envcfg: converter should return 2 arguments. %v returns %d arguments",
+			"envcfg: parser should return 2 arguments. %v returns %d arguments",
 			fname, t.NumOut())
 	}
 	// the first can be any type. the second should be error
 	errorInterface := reflect.TypeOf((*error)(nil)).Elem()
 	if !t.Out(1).Implements(errorInterface) {
 		return fmt.Errorf(
-			"envcfg: converter's last return value should be error. %s's last return value is %v",
+			"envcfg: parser's last return value should be error. %s's last return value is %v",
 			fname, t.Out(1))
 	}
-	_, alreadyRegistered := e.converters[t.Out(0)]
+	_, alreadyRegistered := e.parsers[t.Out(0)]
 	if alreadyRegistered {
-		return fmt.Errorf("envcfg: a converter has already been registered for the %v type.  cannot also register %s",
+		return fmt.Errorf("envcfg: a parser has already been registered for the %v type.  cannot also register %s",
 			t.Out(0), fname,
 		)
 	}
@@ -94,7 +94,7 @@ func (e *Loader) RegisterConverter(f interface{}) error {
 		defer func() {
 			p := recover()
 			if p != nil {
-				// we panicked running the inner converter function.
+				// we panicked running the inner parser function.
 				err = fmt.Errorf("%s panicked: %s", fname, p)
 			}
 		}()
@@ -104,7 +104,7 @@ func (e *Loader) RegisterConverter(f interface{}) error {
 		}
 		return returnvals[0], nil
 	}
-	e.converters[t.Out(0)] = wrapped
+	e.parsers[t.Out(0)] = wrapped
 	return nil
 }
 
@@ -141,12 +141,12 @@ func (e *Loader) LoadFromMap(vals map[string]string, c interface{}) error {
 				return fmt.Errorf("envcfg: no %s value found, and %s.%s has no default", envKey, structType.Name(), field.Name)
 			}
 		}
-		converterFunc, ok := e.converters[field.Type]
+		parserFunc, ok := e.parsers[field.Type]
 		if !ok {
-			return fmt.Errorf("envcfg: no converter function found for type %v", field.Type)
+			return fmt.Errorf("envcfg: no parser function found for type %v", field.Type)
 		}
 
-		toSet, err := converterFunc(stringVal)
+		toSet, err := parserFunc(stringVal)
 		if err != nil {
 			return fmt.Errorf("envcfg: cannot populate %s: %v", field.Name, err)
 		}

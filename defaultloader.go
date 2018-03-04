@@ -8,7 +8,7 @@ import "fmt"
 var defaultLoader *Loader
 
 func init() {
-	// we can only fail here if one of the hardcoded default converters has the wrong function
+	// we can only fail here if one of the hardcoded default parsers has the wrong function
 	// signature.  If that does fail, fail hard.
 	var err error
 	defaultLoader, err = New()
@@ -27,8 +27,8 @@ func LoadFromMap(vals map[string]string, c interface{}) error {
 	return defaultLoader.LoadFromMap(vals, c)
 }
 
-// RegisterConverter takes a func (string) (<anytype>, error) and registers it on the default loader
-// as the converter for <anytype>.
-func RegisterConverter(f interface{}) error {
-	return defaultLoader.RegisterConverter(f)
+// RegisterParser takes a func (string) (<anytype>, error) and registers it on the default loader
+// as the parser for <anytype>.
+func RegisterParser(f interface{}) error {
+	return defaultLoader.RegisterParser(f)
 }

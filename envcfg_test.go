@@ -79,60 +79,60 @@ func TestDefaultLoader(t *testing.T) {
 	assert.Equal(t, expected, conf)
 }
 
-// registering converters of the wrong shape
-func TestConverterShape(t *testing.T) {
+// registering parsers of the wrong shape
+func TestParserShape(t *testing.T) {
 	type foo struct{}
 	type bar foo
 
 	tt := []struct {
-		desc      string
-		converter interface{}
-		err       string
+		desc   string
+		parser interface{}
+		err    string
 	}{
 		{
-			desc:      "not even a function",
-			converter: "I can't even",
-			err:       "envcfg: I can't even is not a func",
+			desc:   "not even a function",
+			parser: "I can't even",
+			err:    "envcfg: I can't even is not a func",
 		},
 		{
-			desc:      "wrong number of inputs",
-			converter: func(s, t string) (foo, error) { return foo{}, nil },
-			err:       "envcfg: converter should accept 1 string argument. github.com/btubbs/envcfg.TestConverterShape.func1 accepts 2 arguments",
+			desc:   "wrong number of inputs",
+			parser: func(s, t string) (foo, error) { return foo{}, nil },
+			err:    "envcfg: parser should accept 1 string argument. github.com/btubbs/envcfg.TestParserShape.func1 accepts 2 arguments",
 		},
 		{
-			desc:      "non-string input",
-			converter: func(i int) (foo, error) { return foo{}, nil },
-			err:       "envcfg: converter should accept a string argument. github.com/btubbs/envcfg.TestConverterShape.func2 accepts a int argument",
+			desc:   "non-string input",
+			parser: func(i int) (foo, error) { return foo{}, nil },
+			err:    "envcfg: parser should accept a string argument. github.com/btubbs/envcfg.TestParserShape.func2 accepts a int argument",
 		},
 		{
-			desc:      "wrong number of outputs",
-			converter: func(s string) (foo, string, error) { return foo{}, "", nil },
-			err:       "envcfg: converter should return 2 arguments. github.com/btubbs/envcfg.TestConverterShape.func3 returns 3 arguments",
+			desc:   "wrong number of outputs",
+			parser: func(s string) (foo, string, error) { return foo{}, "", nil },
+			err:    "envcfg: parser should return 2 arguments. github.com/btubbs/envcfg.TestParserShape.func3 returns 3 arguments",
 		},
 		{
-			desc:      "second output not error",
-			converter: func(s string) (foo, string) { return foo{}, "" },
-			err:       "envcfg: converter's last return value should be error. github.com/btubbs/envcfg.TestConverterShape.func4's last return value is string",
+			desc:   "second output not error",
+			parser: func(s string) (foo, string) { return foo{}, "" },
+			err:    "envcfg: parser's last return value should be error. github.com/btubbs/envcfg.TestParserShape.func4's last return value is string",
 		},
 		{
-			desc:      "success",
-			converter: func(s string) (foo, error) { return foo{}, nil },
-			err:       "",
+			desc:   "success",
+			parser: func(s string) (foo, error) { return foo{}, nil },
+			err:    "",
 		},
 		{
-			desc:      "overwriting converter forbidden",
-			converter: func(s string) (foo, error) { return foo{}, nil },
-			err:       "envcfg: a converter has already been registered for the envcfg.foo type.  cannot also register github.com/btubbs/envcfg.TestConverterShape.func6",
+			desc:   "overwriting parser forbidden",
+			parser: func(s string) (foo, error) { return foo{}, nil },
+			err:    "envcfg: a parser has already been registered for the envcfg.foo type.  cannot also register github.com/btubbs/envcfg.TestParserShape.func6",
 		},
 		{
-			desc:      "success with type alias",
-			converter: func(s string) (bar, error) { return bar{}, nil },
-			err:       "",
+			desc:   "success with type alias",
+			parser: func(s string) (bar, error) { return bar{}, nil },
+			err:    "",
 		},
 	}
 
 	for _, tc := range tt {
-		err := RegisterConverter(tc.converter)
+		err := RegisterParser(tc.parser)
 		if tc.err != "" {
 			assert.Equal(t, errors.New(tc.err), err, tc.desc)
 		} else {
@@ -141,7 +141,7 @@ func TestConverterShape(t *testing.T) {
 	}
 }
 
-func TestBuggyConverters(t *testing.T) {
+func TestBuggyParsers(t *testing.T) {
 	type foo struct{}
 	type myConfig struct {
 		B foo `env:"BAR"`
@@ -150,26 +150,26 @@ func TestBuggyConverters(t *testing.T) {
 		"BAR": "it doesn't really matter",
 	}
 	tt := []struct {
-		desc      string
-		converter interface{}
-		err       string
+		desc   string
+		parser interface{}
+		err    string
 	}{
 		{
-			desc:      "converter that errors",
-			converter: func(s string) (foo, error) { return foo{}, errors.New("oops") },
-			err:       "envcfg: cannot populate B: oops",
+			desc:   "parser that errors",
+			parser: func(s string) (foo, error) { return foo{}, errors.New("oops") },
+			err:    "envcfg: cannot populate B: oops",
 		},
 		{
-			desc:      "converter that panics",
-			converter: func(s string) (foo, error) { panic("I panicked"); return foo{}, nil },
-			err:       "envcfg: cannot populate B: github.com/btubbs/envcfg.TestBuggyConverters.func2 panicked: I panicked",
+			desc:   "parser that panics",
+			parser: func(s string) (foo, error) { panic("I panicked"); return foo{}, nil },
+			err:    "envcfg: cannot populate B: github.com/btubbs/envcfg.TestBuggyParsers.func2 panicked: I panicked",
 		},
 	}
 
 	for _, tc := range tt {
 		var conf myConfig
 		ec, _ := New()
-		ec.RegisterConverter(tc.converter)
+		ec.RegisterParser(tc.parser)
 		err := ec.LoadFromMap(vals, &conf)
 		assert.Equal(t, errors.New(tc.err), err, tc.desc)
 	}
@@ -221,9 +221,9 @@ func TestBadStructs(t *testing.T) {
 			err:   "envcfg: &[] is not a pointer to a struct",
 		},
 		{
-			desc:  "no converter for this type",
+			desc:  "no parser for this type",
 			strct: &quux{},
-			err:   "envcfg: no converter function found for type envcfg.baz",
+			err:   "envcfg: no parser function found for type envcfg.baz",
 		},
 	}
 
