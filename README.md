@@ -13,8 +13,10 @@ types.  It's designed with a few guiding principles:
 
 envcfg is inspired by the struct tag pattern used by Go when unmarshaling JSON or scanning database
 rows.  In this example, our config object has a `string`, an `int`, a database connection, and a
-`time.Duration`.  All of these values are set by envcfg from environment variables or from defaults
-set in the struct tags:
+`time.Duration`.  All of the values in the example below are set by envcfg from environment variables or from defaults
+set in the struct tags.
+
+## Example
 
     // In a real app, these would already be set by your environment.
     os.Setenv("BAR", "321")
@@ -27,9 +29,9 @@ set in the struct tags:
       RefreshInterval time.Duration `env:"REFRESH_INTERVAL" default:"2h30m"`
     }
 
-    // envcfg has built in support for Go's built in types, but we need to register our own parser to
-    // load other types like *sql.DB.  A parser func takes a string and returns the type matching
-    // your struct field, and an error.
+    // envcfg has built in support for many of Go's built in types, but not *sql.DB, so we'll have to
+    // register our own parser.  A parser func takes a string and returns the type matching your
+    // struct field, and an error.
     envcfg.RegisterParser(func(s string) (*sql.DB, error) {
       db, err := sql.Open("postgres", s)
       if err != nil {
@@ -51,16 +53,41 @@ set in the struct tags:
     // Bar 321
     // Refresh Interval 2h30m0s
 
-Note a couple things about that example:
-- envcfg already knows about Go's built-in types like `int`, `string`, etc.  You don't need to tell
-  it how to turn "123" into the `int` field on your config struct.
-- It also knows how to turn a duration string into a time.Duration.  envcfg doesn't have built-in 
-  parsers for all standard library types yet, but feel free to make a ticket if there's one you'd
-  like to see added.
-- If your struct has a type that envcfg doesn't know how to convert to, you can tell it.  In the example
-  above we register a function that takes a `DATABASE_URL` and turns it into a connection to a
-  Postgres database.  You can register parsers for struct types, pointers to struct types,
-  arrays, and custom types like `type MyInt int`.
+## Built-in Supported Types
+
+As noted in the comments in the above example, envcfg already knows how to parse strings into many of the
+types built in to Go or its standard library.  Here's the complete list:
+
+    int
+    bool              
+    string            
+    float32           
+    float64           
+    int8              
+    int16             
+    int32             
+    int64             
+    uint              
+    uint8             
+    uint16            
+    uint32            
+    uint64            
+    time.Duration     
+    time.Time         
+    *url.URL          
+    net.IP
+    net.HardwareAddr  
+    *mail.Address     
+    []*mail.Address   
+    *template.Template
+
+## Parsing Other Types
+
+If your struct has a field of some other type, you can tell envcfg how to parse a string into it by
+registering your own parser function (as done for `*sql.DB` in the example above).  You can register
+parsers for struct types, pointers to struct types, arrays, and custom types like `type MyInt int`.
+
+## Using a Map Instead of Environment Variables
 
 If you want to provide your own map of values instead of reading environment variables, there's also
 a envcfg.LoadFromMap function that will accept your own `map[string]string`.
@@ -74,6 +101,8 @@ a envcfg.LoadFromMap function that will accept your own `map[string]string`.
     ...
 
     err := envcfg.LoadFromMap(myVars, &conf)
+
+## Instantiating Custom/Multiple Loaders
 
 The examples above all use the default loader provided by the envcfg package.  If you want more
 control you can instantiate your own loader (or multiple loaders) using envcfg.New():

@@ -39,6 +39,7 @@ func TestDefaultLoader(t *testing.T) {
 		Email          *mail.Address      `env:"EMAIL_ADDRESS"`
 		EmailAddresses []*mail.Address    `env:"EMAIL_ADDRESSES"`
 		Template       *template.Template `env:"GREETING_TEMPLATE"`
+		IP             net.IP             `env:"IP"`
 	}
 
 	vals := map[string]string{
@@ -63,6 +64,7 @@ func TestDefaultLoader(t *testing.T) {
 		"EMAIL_ADDRESS":     "Brent Tubbs <brent.tubbs@gmail.com>",
 		"EMAIL_ADDRESSES":   "Alice <alice@example.com>, Bob <bob@example.com>, Eve <eve@example.com>",
 		"GREETING_TEMPLATE": "Hello {{.Name}}!",
+		"IP":                "8.8.8.8",
 	}
 
 	var conf bigConfig
@@ -100,6 +102,7 @@ func TestDefaultLoader(t *testing.T) {
 			&mail.Address{Name: "Eve", Address: "eve@example.com"},
 		},
 		Template: tmpl,
+		IP:       net.IPv4(8, 8, 8, 8),
 	}
 	assert.Equal(t, expected, conf)
 }
