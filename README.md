@@ -12,9 +12,9 @@ types.  It's designed with a few guiding principles:
 3. Loading config should require as little boilerplate as possible.
 
 envcfg is inspired by the struct tag pattern used by Go when unmarshaling JSON or scanning database
-rows.  In this example, our config object has a `string`, an `int`, a database connection, and a
-`time.Duration`.  All of the values in the example below are set by envcfg from environment variables or from defaults
-set in the struct tags.
+rows.  In the example below, our config object has a `string`, an `int`, a database connection, and
+a `time.Duration`.  All of the values in this example are set by envcfg from environment variables
+or from defaults set in the struct tags.
 
 ## Example
 
