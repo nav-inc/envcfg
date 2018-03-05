@@ -56,7 +56,7 @@ set in the struct tags.
 ## Built-in Supported Types
 
 As noted in the comments in the above example, envcfg already knows how to parse strings into many of the
-types built in to Go or its standard library.  Here's the complete list:
+types built in to Go and its standard library.  Here's the complete list:
 
     int
     bool              
