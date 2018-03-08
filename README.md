@@ -1,4 +1,4 @@
-# envcfg [![Build Status](https://travis-ci.org/btubbs/envcfg.svg?branch=master)](https://travis-ci.org/btubbs/envcfg)
+# envcfg [![Build Status](https://travis-ci.org/btubbs/envcfg.svg?branch=master)](https://travis-ci.org/btubbs/envcfg) [![Coverage Status](https://coveralls.io/repos/github/btubbs/envcfg/badge.svg?branch=master)](https://coveralls.io/github/btubbs/envcfg?branch=master)
 
 envcfg is a Go package for loading config from environment variables into struct fields of arbitrary
 types.  It's designed with a few guiding principles:
