@@ -9,6 +9,8 @@ import (
 	"reflect"
 	"runtime"
 	"strings"
+
+	multierror "github.com/hashicorp/go-multierror"
 )
 
 const (
@@ -122,6 +124,9 @@ func (e *Loader) LoadFromMap(vals map[string]string, c interface{}) error {
 	}
 	structVal := reflect.ValueOf(c).Elem()
 
+	// If there are multiple errors while reading config, bundle them all together so users can fix
+	// them all at once instead of with frustrating retries.
+	var errs *multierror.Error
 	for i := 0; i < structType.NumField(); i++ {
 		field := structType.Field(i)
 		envKey, ok := field.Tag.Lookup(cfgTag)
@@ -138,21 +143,33 @@ func (e *Loader) LoadFromMap(vals map[string]string, c interface{}) error {
 			if defaultOK {
 				stringVal = defaultString
 			} else {
-				return fmt.Errorf("envcfg: no %s value found, and %s.%s has no default", envKey, structType.Name(), field.Name)
+				errs = multierror.Append(
+					errs,
+					fmt.Errorf("no %s value found, and %s.%s has no default", envKey, structType.Name(), field.Name),
+				)
+				continue
 			}
 		}
 		parserFunc, ok := e.parsers[field.Type]
 		if !ok {
-			return fmt.Errorf("envcfg: no parser function found for type %v", field.Type)
+			errs = multierror.Append(
+				errs,
+				fmt.Errorf("no parser function found for type %v", field.Type),
+			)
+			continue
 		}
 
 		toSet, err := parserFunc(stringVal)
 		if err != nil {
-			return fmt.Errorf("envcfg: cannot populate %s: %v", field.Name, err)
+			errs = multierror.Append(
+				errs,
+				fmt.Errorf("envcfg: cannot populate %s: %v", field.Name, err),
+			)
+			continue
 		}
 		structVal.Field(i).Set(toSet)
 	}
-	return nil
+	return errs.ErrorOrNil()
 }
 
 // Load loads config from the environment into the provided struct.

@@ -184,12 +184,12 @@ func TestBuggyParsers(t *testing.T) {
 		{
 			desc:   "parser that errors",
 			parser: func(s string) (foo, error) { return foo{}, errors.New("oops") },
-			err:    "envcfg: cannot populate B: oops",
+			err:    "1 error occurred:\n\n* envcfg: cannot populate B: oops",
 		},
 		{
 			desc:   "parser that panics",
 			parser: func(s string) (foo, error) { panic("I panicked"); return foo{}, nil },
-			err:    "envcfg: cannot populate B: github.com/btubbs/envcfg.TestBuggyParsers.func2 panicked: I panicked",
+			err:    "1 error occurred:\n\n* envcfg: cannot populate B: github.com/btubbs/envcfg.TestBuggyParsers.func2 panicked: I panicked",
 		},
 	}
 
@@ -198,7 +198,7 @@ func TestBuggyParsers(t *testing.T) {
 		ec, _ := New()
 		ec.RegisterParser(tc.parser)
 		err := ec.LoadFromMap(vals, &conf)
-		assert.Equal(t, errors.New(tc.err), err, tc.desc)
+		assert.Equal(t, tc.err, err.Error(), tc.desc)
 	}
 }
 
@@ -223,7 +223,7 @@ func TestMissingValue(t *testing.T) {
 
 	var conf myConfig
 	err := LoadFromMap(map[string]string{}, &conf)
-	assert.Equal(t, "envcfg: no FOO3 value found, and myConfig.F has no default", err.Error())
+	assert.Equal(t, "1 error occurred:\n\n* no FOO3 value found, and myConfig.F has no default", err.Error())
 }
 
 func TestBadStructs(t *testing.T) {
@@ -250,7 +250,7 @@ func TestBadStructs(t *testing.T) {
 		{
 			desc:  "no parser for this type",
 			strct: &quux{},
-			err:   "envcfg: no parser function found for type envcfg.baz",
+			err:   "1 error occurred:\n\n* no parser function found for type envcfg.baz",
 		},
 	}
 
