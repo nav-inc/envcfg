@@ -124,3 +124,4 @@ If you want a loader without any of the default parsers registered, you can get 
     }
 
     err = ec.Load(&conf)
+
