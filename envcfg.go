@@ -60,10 +60,10 @@ func (e *Loader) RegisterParser(f interface{}) error {
 	}
 
 	fname := runtime.FuncForPC(reflect.ValueOf(f).Pointer()).Name()
-	// f should accept one argument
-	if t.NumIn() != 1 {
+	// f should accept at least one argument
+	if t.NumIn() < 1 {
 		return fmt.Errorf(
-			"envcfg: parser should accept 1 string argument. %v accepts %d arguments",
+			"envcfg: parser should accept at least 1 string argument. %v accepts %d arguments",
 			fname, t.NumIn())
 	}
 	// it should be a string argument

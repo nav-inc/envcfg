@@ -110,61 +110,51 @@ func TestDefaultLoader(t *testing.T) {
 func TestParserShape(t *testing.T) {
 	type foo struct{}
 	type bar foo
+	type baz foo
 
 	tt := []struct {
 		desc   string
 		parser interface{}
-		err    string
+		err    error
 	}{
 		{
 			desc:   "not even a function",
 			parser: "I can't even",
-			err:    "envcfg: I can't even is not a func",
-		},
-		{
-			desc:   "wrong number of inputs",
-			parser: func(s, t string) (foo, error) { return foo{}, nil },
-			err:    "envcfg: parser should accept 1 string argument. github.com/btubbs/envcfg.TestParserShape.func1 accepts 2 arguments",
+			err:    errors.New("envcfg: I can't even is not a func"),
 		},
 		{
 			desc:   "non-string input",
 			parser: func(i int) (foo, error) { return foo{}, nil },
-			err:    "envcfg: parser should accept a string argument. github.com/btubbs/envcfg.TestParserShape.func2 accepts a int argument",
+			err:    errors.New("envcfg: parser should accept a string argument. github.com/btubbs/envcfg.TestParserShape.func1 accepts a int argument"),
 		},
 		{
 			desc:   "wrong number of outputs",
 			parser: func(s string) (foo, string, error) { return foo{}, "", nil },
-			err:    "envcfg: parser should return 2 arguments. github.com/btubbs/envcfg.TestParserShape.func3 returns 3 arguments",
+			err:    errors.New("envcfg: parser should return 2 arguments. github.com/btubbs/envcfg.TestParserShape.func2 returns 3 arguments"),
 		},
 		{
 			desc:   "second output not error",
 			parser: func(s string) (foo, string) { return foo{}, "" },
-			err:    "envcfg: parser's last return value should be error. github.com/btubbs/envcfg.TestParserShape.func4's last return value is string",
+			err:    errors.New("envcfg: parser's last return value should be error. github.com/btubbs/envcfg.TestParserShape.func3's last return value is string"),
 		},
 		{
-			desc:   "success",
-			parser: func(s string) (foo, error) { return foo{}, nil },
-			err:    "",
+			desc:   "any number of inputs",
+			parser: func(s, t string) (foo, error) { return foo{}, nil },
 		},
 		{
 			desc:   "overwriting parser forbidden",
 			parser: func(s string) (foo, error) { return foo{}, nil },
-			err:    "envcfg: a parser has already been registered for the envcfg.foo type.  cannot also register github.com/btubbs/envcfg.TestParserShape.func6",
+			err:    errors.New("envcfg: a parser has already been registered for the envcfg.foo type.  cannot also register github.com/btubbs/envcfg.TestParserShape.func5"),
 		},
 		{
 			desc:   "success with type alias",
 			parser: func(s string) (bar, error) { return bar{}, nil },
-			err:    "",
 		},
 	}
 
 	for _, tc := range tt {
 		err := RegisterParser(tc.parser)
-		if tc.err != "" {
-			assert.Equal(t, errors.New(tc.err), err, tc.desc)
-		} else {
-			assert.Equal(t, nil, err, tc.desc)
-		}
+		assert.Equal(t, tc.err, err, tc.desc)
 	}
 }
 
