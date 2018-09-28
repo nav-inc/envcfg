@@ -37,9 +37,10 @@ func Empty() *Loader {
 	return ec
 }
 
-// Our internal parser func takes a string and returns a reflect.Value and an error.  Funcs of
-// this type wrap the default parsers and user-provided parsers that return arbitrary types.
-type parser func(string) (reflect.Value, error)
+// Our internal parser func takes any number of strings and returns a reflect.Value and an error.
+// Funcs of this type wrap the default parsers and user-provided parsers that return arbitrary
+// types.
+type parser func(...string) (reflect.Value, error)
 
 // Loader is a helper for reading values from environment variables (or a map[string]string),
 // converting them to Go types, and setting their values to fields on a user-provided struct.
@@ -92,7 +93,7 @@ func (e *Loader) RegisterParser(f interface{}) error {
 	}
 
 	callable := reflect.ValueOf(f)
-	wrapped := func(s string) (v reflect.Value, err error) {
+	wrapped := func(ss ...string) (v reflect.Value, err error) {
 		defer func() {
 			p := recover()
 			if p != nil {
@@ -100,7 +101,11 @@ func (e *Loader) RegisterParser(f interface{}) error {
 				err = fmt.Errorf("%s panicked: %s", fname, p)
 			}
 		}()
-		returnvals := callable.Call([]reflect.Value{reflect.ValueOf(s)})
+		vals := []reflect.Value{}
+		for _, s := range ss {
+			vals = append(vals, reflect.ValueOf(s))
+		}
+		returnvals := callable.Call(vals)
 		if !returnvals[1].IsNil() {
 			return reflect.Value{}, fmt.Errorf("%v", returnvals[1])
 		}
