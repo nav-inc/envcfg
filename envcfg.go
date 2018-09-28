@@ -18,6 +18,8 @@ const (
 	defaultTag = "default"
 )
 
+var stringType = reflect.TypeOf("")
+
 // New returns a Loader with the default parsers enabled.
 func New() (*Loader, error) {
 	ec := Empty()
@@ -66,11 +68,14 @@ func (e *Loader) RegisterParser(f interface{}) error {
 			"envcfg: parser should accept at least 1 string argument. %v accepts %d arguments",
 			fname, t.NumIn())
 	}
-	// it should be a string argument
-	if t.In(0) != reflect.TypeOf("") {
-		return fmt.Errorf(
-			"envcfg: parser should accept a string argument. %s accepts a %v argument",
-			fname, t.In(0))
+
+	for n := 0; n < t.NumIn(); n++ {
+		// it should be a string argument
+		if t.In(n) != stringType {
+			return fmt.Errorf(
+				"envcfg: parser should accept only string arguments. %s accepts a %v argument",
+				fname, t.In(n))
+		}
 	}
 	// it should return two things
 	if t.NumOut() != 2 {

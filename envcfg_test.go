@@ -124,8 +124,8 @@ func TestParserShape(t *testing.T) {
 		},
 		{
 			desc:   "non-string input",
-			parser: func(i int) (foo, error) { return foo{}, nil },
-			err:    errors.New("envcfg: parser should accept a string argument. github.com/btubbs/envcfg.TestParserShape.func1 accepts a int argument"),
+			parser: func(s string, i int) (foo, error) { return foo{}, nil },
+			err:    errors.New("envcfg: parser should accept only string arguments. github.com/btubbs/envcfg.TestParserShape.func1 accepts a int argument"),
 		},
 		{
 			desc:   "wrong number of outputs",
