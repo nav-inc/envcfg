@@ -2,7 +2,6 @@ package envcfg
 
 import (
 	"errors"
-	"fmt"
 	"html/template"
 	"net"
 	"net/mail"
@@ -221,7 +220,6 @@ func TestLoadMultipleVars(t *testing.T) {
 		"B": "two",
 		"C": "three",
 	}, &conf)
-	fmt.Println(err)
 	assert.Nil(t, err)
 	assert.Equal(t, myString("onetwothree"), conf.F)
 }
@@ -239,9 +237,29 @@ func TestLoadMultipleVarsWithDefaults(t *testing.T) {
 		"B": "two",
 		"C": "three",
 	}, &conf)
-	fmt.Println(err)
 	assert.Nil(t, err)
 	assert.Equal(t, myString("threetwothree"), conf.F)
+}
+
+func TestMismatchedParserAndTags(t *testing.T) {
+	type myString string
+	type myConfig struct {
+		F myString `env:"A,B"`
+	}
+
+	RegisterParser(func(a, b, c string) (myString, error) { return myString(a + b + c), nil })
+
+	var conf myConfig
+	err := LoadFromMap(map[string]string{
+		"A": "one",
+		"B": "two",
+		"C": "three",
+	}, &conf)
+	assert.Equal(
+		t,
+		errors.New("envcfg: loader for envcfg.myString type takes 3 args, but A,B lists 2 variables"),
+		err,
+	)
 }
 
 func TestMissingValue(t *testing.T) {
