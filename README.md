@@ -87,34 +87,45 @@ types, arrays, and type aliases like `type MyInt int`.  The example below demons
 custom parser function that will populate a `*sql.DB` field on a struct.
 
 ```go
-    type myAppConfig struct {
-      DB              *sql.DB       `env:"DATABASE_URL"`
-    }
+type myAppConfig struct {
+  DB              *sql.DB       `env:"DATABASE_URL"`
+}
 
-    // A parser func takes one or more strings and returns the type matching your // struct field,
-    // and an error.
-    envcfg.RegisterParser(func(s string) (*sql.DB, error) {
-      db, err := sql.Open("postgres", s)
-      if err != nil {
-        return nil, err
-      }
-      return db, nil
-    })
+func main() {
+  // to load config we need to instantiate our config struct and pass its pointer to envcfg.Load
+  var conf myAppConfig
+  err := envcfg.Load(&conf)
+  if err != nil {
+    fmt.Println(err)
+  }
+  // now do something useful with the DB connection we just set up...
+}
 
-    // to load config we need to instantiate our config struct and pass its pointer to envcfg.Load
-    var conf myAppConfig
-    err := envcfg.Load(&conf)
-    if err != nil {
-      fmt.Println(err)
-    }
+func LoadDBConnection(s string) (*sql.DB, error) {
+  db, err := sql.Open("postgres", s)
+  if err != nil {
+    return nil, err
+  }
+  return db, nil
+}
+
+func init() {
+  // A parser func takes one or more strings and returns the type matching your struct field,
+  // and an error.
+  if err := envcfg.RegisterParser(LoadDBConnection); err != nil {
+    panic(err.Error())
+  }
+}
+
 ```
 
 ## Loading a Single Field from Multiple Environment Variables
 
 If you have a struct field that should be loaded from multiple environment variables, you can define
 a parser function that takes several string arguments.  The `env` tag on your config struct field
-must then provide the same number of environment variable names to be passed to the parser.  Here's
-an example that loads an Amazon S3 client from three commonly-used environment variables:
+must then provide the same number of environment variable names to be passed to the parser
+(separated by commas).  Here's an example that loads an Amazon S3 client from three commonly-used
+environment variables:
 
 ```go
 package main
@@ -130,6 +141,10 @@ import (
 	"github.com/btubbs/envcfg"
 )
 
+type myAppConfig struct {
+	S3 *s3.S3 `env:"AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_DEFAULT_REGION"`
+}
+
 func main() {
 	var conf myAppConfig
 	err := envcfg.Load(&conf)
@@ -137,10 +152,6 @@ func main() {
 		panic(err.Error())
 	}
   // now the "conf" object has an S3 client on it that you can use to get/post files.
-}
-
-type myAppConfig struct {
-	S3 *s3.S3 `env:"AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY,AWS_DEFAULT_REGION"`
 }
 
 // LoadS3Client takes an access key id, secret, and default region, and returns an Amazon S3 client
@@ -171,32 +182,36 @@ func init() {
 
 If you want to provide your own map of values instead of reading environment variables, there's also
 a envcfg.LoadFromMap function that will accept your own `map[string]string`.
+```go
+myVars := map[string]string{
+  "FOO": "Let's configure this",
+  "BAR": "1",
+  "DB":  "postgres://postgres@/my_app?sslmode=disable",
+}
 
-    myVars := map[string]string{
-      "FOO": "Let's configure this",
-      "BAR": "1",
-      "DB":  "postgres://postgres@/my_app?sslmode=disable",
-    }
+...
 
-    ...
-
-    err := envcfg.LoadFromMap(myVars, &conf)
+err := envcfg.LoadFromMap(myVars, &conf)
+```
 
 ## Instantiating Custom/Multiple Loaders
 
 The examples above all use the default loader provided by the envcfg package.  If you want more
 control you can instantiate your own loader (or multiple loaders) using envcfg.New():
 
+```go
     ec, err := envcfg.New()
     if err != nil {
       return err
     }
 
     err = ec.Load(&conf)
+```
 
 If you want a loader without any of the default parsers registered, you can get one by calling
 `envcfg.Empty()`:
 
+```go
     ec := envcfg.Empty()
     err := ec.RegisterParser(myParserFunc)
     if err != nil {
@@ -204,6 +219,7 @@ If you want a loader without any of the default parsers registered, you can get 
     }
 
     err = ec.Load(&conf)
+```
 
 ## Comparison to github.com/kelseyhightower/envconfig
 The day after I wrote the first version of this library, a friend pointed out the similar
@@ -213,14 +229,13 @@ is big enough for both.  There are a few differences that may make you prefer on
 This library (envcfg) lets you register parsers for other people's types without needing to alias
 them to add `UnmarshalText` or `Decode` methods.
 
-envcfg supports loading one field from multiple environment variables (e.g. `AWS_ACCESS_KEY_ID`
-and `AWS_SECRET_ACCESS_KEY`), which envconfig does not.
+envcfg supports loading one field from multiple environment variables, while envconfig does not.
 
 envconfig's support for `Set(string) error` methods (like those in `flag.Value`) should allow you to
 have struct fields that can be set from env vars or command line flags.  There is no such support in
 envcfg.
 
-If you don't designate the environment variable to use in a struct tag, Kelsey's envconfig library
+If you don't designate the environment variable to use in a struct tag, the envconfig library
 will use the field's capitalization to guess at the environment variable to use.  envcfg, on the
 other hand, will only attempt to load fields with explicit `env` tags, and it requires that either
 the environment variable or a `default` tag (or both) be set.
