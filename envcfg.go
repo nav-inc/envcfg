@@ -161,7 +161,7 @@ func (e *Loader) LoadFromMap(vals map[string]string, c interface{}) error {
 		if defaultOK {
 			envDefaults = strings.Split(defaultString, tagSep)
 			if len(envKeys) != len(envDefaults) {
-				return fmt.Errorf("envcfg: %s has %d names but %s has %d values",
+				return fmt.Errorf("envcfg: env tag %s has %d names but default tag %s has %d values",
 					tagVal, len(envKeys),
 					defaultString, len(envDefaults),
 				)

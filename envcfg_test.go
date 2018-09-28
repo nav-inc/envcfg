@@ -262,6 +262,26 @@ func TestMismatchedParserAndTags(t *testing.T) {
 	)
 }
 
+func TestMismatchedDefaults(t *testing.T) {
+	type myString string
+	type myConfig struct {
+		F myString `env:"A,B,C" default:"X,Y"`
+	}
+
+	RegisterParser(func(a, b, c string) (myString, error) { return myString(a + b + c), nil })
+
+	var conf myConfig
+	err := LoadFromMap(map[string]string{
+		"B": "two",
+		"C": "three",
+	}, &conf)
+	assert.Equal(
+		t,
+		errors.New("envcfg: env tag A,B,C has 3 names but default tag X,Y has 2 values"),
+		err,
+	)
+}
+
 func TestMissingValue(t *testing.T) {
 	type myConfig struct {
 		F string `env:"FOO3"`
