@@ -16,6 +16,7 @@ import (
 const (
 	cfgTag     = "env"
 	defaultTag = "default"
+	tagSep     = ","
 )
 
 var stringType = reflect.TypeOf("")
@@ -42,7 +43,10 @@ func Empty() *Loader {
 // Our internal parser func takes any number of strings and returns a reflect.Value and an error.
 // Funcs of this type wrap the default parsers and user-provided parsers that return arbitrary
 // types.
-type parser func(...string) (reflect.Value, error)
+type parser struct {
+	f       func(...string) (reflect.Value, error)
+	numArgs int
+}
 
 // Loader is a helper for reading values from environment variables (or a map[string]string),
 // converting them to Go types, and setting their values to fields on a user-provided struct.
@@ -116,7 +120,7 @@ func (e *Loader) RegisterParser(f interface{}) error {
 		}
 		return returnvals[0], nil
 	}
-	e.parsers[t.Out(0)] = wrapped
+	e.parsers[t.Out(0)] = parser{f: wrapped, numArgs: t.NumIn()}
 	return nil
 }
 
@@ -139,28 +143,32 @@ func (e *Loader) LoadFromMap(vals map[string]string, c interface{}) error {
 	var errs *multierror.Error
 	for i := 0; i < structType.NumField(); i++ {
 		field := structType.Field(i)
-		envKey, ok := field.Tag.Lookup(cfgTag)
+
+		tagVal, ok := field.Tag.Lookup(cfgTag)
 		if !ok {
 			// this field doesn't have our tag.  Skip.
 			continue
 		}
 
-		defaultString, defaultOK := field.Tag.Lookup(defaultTag)
+		envKeys := strings.Split(tagVal, tagSep)
+		var envDefaults []string
 
-		stringVal, ok := vals[envKey]
-		if !ok {
-			// could not find the string we're looking for in map.  is there a default?
-			if defaultOK {
-				stringVal = defaultString
-			} else {
-				errs = multierror.Append(
-					errs,
-					fmt.Errorf("no %s value found, and %s.%s has no default", envKey, structType.Name(), field.Name),
+		// if default provided, split that too and make sure they're the same length DONE
+		// make sure parserFunc has same number of inputs DONE
+		// loop over split tagval, pulling values from environment, and erroring if any are missing.
+		// pass spread list of env vars into parser
+		defaultString, defaultOK := field.Tag.Lookup(defaultTag)
+		if defaultOK {
+			envDefaults = strings.Split(defaultString, tagSep)
+			if len(envKeys) != len(envDefaults) {
+				return fmt.Errorf("envcfg: %s has %d names but %s has %d values",
+					tagVal, len(envKeys),
+					defaultString, len(envDefaults),
 				)
-				continue
 			}
 		}
-		parserFunc, ok := e.parsers[field.Type]
+
+		parser, ok := e.parsers[field.Type]
 		if !ok {
 			errs = multierror.Append(
 				errs,
@@ -169,7 +177,42 @@ func (e *Loader) LoadFromMap(vals map[string]string, c interface{}) error {
 			continue
 		}
 
-		toSet, err := parserFunc(stringVal)
+		if parser.numArgs != len(envKeys) {
+			return fmt.Errorf("envcfg: loader for %v type takes %d args, but %s lists %d variables",
+				field.Type,
+				parser.numArgs,
+				tagVal,
+				len(envKeys),
+			)
+		}
+
+		stringVals := []string{}
+		shouldParse := true
+		for i, envKey := range envKeys {
+			stringVal, ok := vals[envKey]
+			if !ok {
+				// could not find the string we're looking for in map.  is there a default?
+				if defaultOK {
+					stringVal = envDefaults[i]
+				} else {
+					errs = multierror.Append(
+						errs,
+						fmt.Errorf("no %s value found, and %s.%s has no default", envKey, structType.Name(), field.Name),
+					)
+					// set the shouldParse flag to false if there was a problem, but continue checking the
+					// rest of the variables so we can show all the missing ones at once.
+					shouldParse = false
+				}
+			}
+			stringVals = append(stringVals, stringVal)
+		}
+		// if we got an error reading any of the variables needed by this parser, then don't bother
+		// calling the parser
+		if !shouldParse {
+			continue
+		}
+
+		toSet, err := parser.f(stringVals...)
 		if err != nil {
 			errs = multierror.Append(
 				errs,

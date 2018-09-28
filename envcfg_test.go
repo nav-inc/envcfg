@@ -2,6 +2,7 @@ package envcfg
 
 import (
 	"errors"
+	"fmt"
 	"html/template"
 	"net"
 	"net/mail"
@@ -138,8 +139,8 @@ func TestParserShape(t *testing.T) {
 			err:    errors.New("envcfg: parser's last return value should be error. github.com/btubbs/envcfg.TestParserShape.func3's last return value is string"),
 		},
 		{
-			desc:   "any number of inputs",
-			parser: func(s, t string) (foo, error) { return foo{}, nil },
+			desc:   "any number of strings",
+			parser: func(x, y, z string) (foo, error) { return foo{}, nil },
 		},
 		{
 			desc:   "overwriting parser forbidden",
@@ -204,6 +205,43 @@ func TestLoadFromEnv(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, "This is foo", conf.F)
 
+}
+
+func TestLoadMultipleVars(t *testing.T) {
+	type myString string
+	type myConfig struct {
+		F myString `env:"A,B,C"`
+	}
+
+	RegisterParser(func(a, b, c string) (myString, error) { return myString(a + b + c), nil })
+
+	var conf myConfig
+	err := LoadFromMap(map[string]string{
+		"A": "one",
+		"B": "two",
+		"C": "three",
+	}, &conf)
+	fmt.Println(err)
+	assert.Nil(t, err)
+	assert.Equal(t, myString("onetwothree"), conf.F)
+}
+
+func TestLoadMultipleVarsWithDefaults(t *testing.T) {
+	type myString string
+	type myConfig struct {
+		F myString `env:"A,B,C" default:"three,two,one"`
+	}
+
+	RegisterParser(func(a, b, c string) (myString, error) { return myString(a + b + c), nil })
+
+	var conf myConfig
+	err := LoadFromMap(map[string]string{
+		"B": "two",
+		"C": "three",
+	}, &conf)
+	fmt.Println(err)
+	assert.Nil(t, err)
+	assert.Equal(t, myString("threetwothree"), conf.F)
 }
 
 func TestMissingValue(t *testing.T) {
