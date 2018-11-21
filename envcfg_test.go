@@ -282,6 +282,24 @@ func TestMismatchedDefaults(t *testing.T) {
 	)
 }
 
+func TestDefaultsCommaEscape(t *testing.T) {
+	type myString string
+	type myConfig struct {
+		F myString `env:"GREETING" default:"Hello\\, Grandpa!"`
+	}
+
+	RegisterParser(func(a string) (myString, error) { return myString(a), nil })
+
+	var conf myConfig
+	err := LoadFromMap(map[string]string{}, &conf)
+	assert.Nil(t, err)
+	assert.Equal(
+		t,
+		myString("Hello, Grandpa!"),
+		conf.F,
+	)
+}
+
 func TestMissingValue(t *testing.T) {
 	type myConfig struct {
 		F string `env:"FOO3"`

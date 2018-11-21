@@ -17,6 +17,7 @@ const (
 	cfgTag     = "env"
 	defaultTag = "default"
 	tagSep     = ","
+	backSlash  = '\\'
 )
 
 var stringType = reflect.TypeOf("")
@@ -159,7 +160,7 @@ func (e *Loader) LoadFromMap(vals map[string]string, c interface{}) error {
 		// pass spread list of env vars into parser
 		defaultString, defaultOK := field.Tag.Lookup(defaultTag)
 		if defaultOK {
-			envDefaults = strings.Split(defaultString, tagSep)
+			envDefaults = splitDefaultTag(defaultString)
 			if len(envKeys) != len(envDefaults) {
 				return fmt.Errorf("envcfg: env tag %s has %d names but default tag %s has %d values",
 					tagVal, len(envKeys),
@@ -240,5 +241,31 @@ func envListToMap(ss []string) map[string]string {
 			out[parsed[0]] = parsed[1]
 		}
 	}
+	return out
+}
+
+func splitDefaultTag(tag string) []string {
+	out := []string{}
+	var lastChar rune
+	var subString string
+	for _, char := range tag {
+		if string(char) == tagSep {
+			if lastChar == backSlash {
+				// escaped separator.  Remove the escape, and make the separator part of the subString
+				subString = subString[:len(subString)-1]
+				subString += string(char)
+			} else {
+				// real separator.  End the subString.
+				out = append(out, subString)
+				subString = ""
+			}
+		} else {
+			subString += string(char)
+		}
+		lastChar = char
+	}
+
+	// append the last subString
+	out = append(out, subString)
 	return out
 }
