@@ -53,7 +53,7 @@ default of "hey there" will be used if not.
 
 ## Built-in Supported Types
 
-As demonstratedd in the above example, envcfg already knows how to parse strings into many of the
+As demonstrated in the above example, envcfg already knows how to parse strings into many of the
 types built in to Go and its standard library.  Here's the complete list:
 
     int
