@@ -125,6 +125,13 @@ func (e *Loader) RegisterParser(f interface{}) error {
 	return nil
 }
 
+// MustRegisterParser attempts to register the provided parser func and panics if it gets an error.
+func (e *Loader) MustRegisterParser(f interface{}) {
+	if err := e.RegisterParser(f); err != nil {
+		panic(err)
+	}
+}
+
 // LoadFromMap loads config from the provided map into the provided struct.
 func (e *Loader) LoadFromMap(vals map[string]string, c interface{}) error {
 	// assert that c is a struct.

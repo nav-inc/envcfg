@@ -32,3 +32,8 @@ func LoadFromMap(vals map[string]string, c interface{}) error {
 func RegisterParser(f interface{}) error {
 	return defaultLoader.RegisterParser(f)
 }
+
+// MustRegisterParser attempts to register the provided parser func and panics if it gets an error.
+func MustRegisterParser(f interface{}) {
+	defaultLoader.MustRegisterParser(f)
+}
