@@ -180,7 +180,7 @@ func (e *Loader) LoadFromMap(vals map[string]string, c interface{}) error {
 		if !ok {
 			errs = multierror.Append(
 				errs,
-				fmt.Errorf("no parser function found for type %v", field.Type),
+				fmt.Errorf("no parser function found for type %v (field %s)", field.Type, field.Name),
 			)
 			continue
 		}
