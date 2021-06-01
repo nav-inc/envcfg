@@ -110,7 +110,6 @@ func TestDefaultLoader(t *testing.T) {
 func TestParserShape(t *testing.T) {
 	type foo struct{}
 	type bar foo
-	type baz foo
 
 	tt := []struct {
 		desc   string
@@ -178,7 +177,7 @@ func TestBuggyParsers(t *testing.T) {
 		},
 		{
 			desc:   "parser that panics",
-			parser: func(s string) (foo, error) { panic("I panicked"); return foo{}, nil },
+			parser: func(s string) (foo, error) { panic("I panicked") },
 			err:    "1 error occurred:\n\n* envcfg: cannot populate B: github.com/nav-inc/envcfg.TestBuggyParsers.func2 panicked: I panicked",
 		},
 	}
@@ -186,8 +185,9 @@ func TestBuggyParsers(t *testing.T) {
 	for _, tc := range tt {
 		var conf myConfig
 		ec, _ := New()
-		ec.RegisterParser(tc.parser)
-		err := ec.LoadFromMap(vals, &conf)
+		err := ec.RegisterParser(tc.parser)
+		assert.Nil(t, err)
+		err = ec.LoadFromMap(vals, &conf)
 		assert.Equal(t, tc.err, err.Error(), tc.desc)
 	}
 }
@@ -212,10 +212,11 @@ func TestLoadMultipleVars(t *testing.T) {
 		F myString `env:"A,B,C"`
 	}
 
-	RegisterParser(func(a, b, c string) (myString, error) { return myString(a + b + c), nil })
+	err := RegisterParser(func(a, b, c string) (myString, error) { return myString(a + b + c), nil })
+	assert.Nil(t, err)
 
 	var conf myConfig
-	err := LoadFromMap(map[string]string{
+	err = LoadFromMap(map[string]string{
 		"A": "one",
 		"B": "two",
 		"C": "three",
@@ -230,10 +231,11 @@ func TestLoadMultipleVarsWithDefaults(t *testing.T) {
 		F myString `env:"A,B,C" default:"three,two,one"`
 	}
 
-	RegisterParser(func(a, b, c string) (myString, error) { return myString(a + b + c), nil })
+	err := RegisterParser(func(a, b, c string) (myString, error) { return myString(a + b + c), nil })
+	assert.Nil(t, err)
 
 	var conf myConfig
-	err := LoadFromMap(map[string]string{
+	err = LoadFromMap(map[string]string{
 		"B": "two",
 		"C": "three",
 	}, &conf)
@@ -247,10 +249,11 @@ func TestMismatchedParserAndTags(t *testing.T) {
 		F myString `env:"A,B"`
 	}
 
-	RegisterParser(func(a, b, c string) (myString, error) { return myString(a + b + c), nil })
+	err := RegisterParser(func(a, b, c string) (myString, error) { return myString(a + b + c), nil })
+	assert.Nil(t, err)
 
 	var conf myConfig
-	err := LoadFromMap(map[string]string{
+	err = LoadFromMap(map[string]string{
 		"A": "one",
 		"B": "two",
 		"C": "three",
@@ -268,10 +271,11 @@ func TestMismatchedDefaults(t *testing.T) {
 		F myString `env:"A,B,C" default:"X,Y"`
 	}
 
-	RegisterParser(func(a, b, c string) (myString, error) { return myString(a + b + c), nil })
+	err := RegisterParser(func(a, b, c string) (myString, error) { return myString(a + b + c), nil })
+	assert.Nil(t, err)
 
 	var conf myConfig
-	err := LoadFromMap(map[string]string{
+	err = LoadFromMap(map[string]string{
 		"B": "two",
 		"C": "three",
 	}, &conf)
@@ -288,10 +292,11 @@ func TestDefaultsCommaEscape(t *testing.T) {
 		F myString `env:"GREETING" default:"Hello\\, Grandpa!"`
 	}
 
-	RegisterParser(func(a string) (myString, error) { return myString(a), nil })
+	err := RegisterParser(func(a string) (myString, error) { return myString(a), nil })
+	assert.Nil(t, err)
 
 	var conf myConfig
-	err := LoadFromMap(map[string]string{}, &conf)
+	err = LoadFromMap(map[string]string{}, &conf)
 	assert.Nil(t, err)
 	assert.Equal(
 		t,

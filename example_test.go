@@ -25,7 +25,7 @@ func Example() {
 	// envcfg has built in support for many of Go's built in types, but not *sql.DB, so we'll have to
 	// register our own parser.  A parser func takes a string and returns the type matching your
 	// struct field, and an error.
-	envcfg.RegisterParser(func(s string) (*sql.DB, error) {
+	err := envcfg.RegisterParser(func(s string) (*sql.DB, error) {
 		db, err := sql.Open("postgres", s)
 		if err != nil {
 			return nil, err
@@ -33,9 +33,13 @@ func Example() {
 		return db, nil
 	})
 
+	if err != nil {
+		panic(err)
+	}
+
 	// to load config we need to instantiate our config struct and pass its pointer to envcfg.Load
 	var conf myAppConfig
-	err := envcfg.Load(&conf)
+	err = envcfg.Load(&conf)
 	if err != nil {
 		fmt.Println(err)
 	}
