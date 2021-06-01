@@ -1,4 +1,4 @@
-# envcfg [![Build Status](https://travis-ci.org/btubbs/envcfg.svg?branch=master)](https://travis-ci.org/btubbs/envcfg) [![Coverage Status](https://coveralls.io/repos/github/btubbs/envcfg/badge.svg?branch=master)](https://coveralls.io/github/btubbs/envcfg?branch=master)
+# envcfg [![Build Status](https://travis-ci.com/nav-inc/envcfg.svg?branch=master)](https://travis-ci.com/nav-inc/envcfg) 
 
 envcfg is a Go package for loading config from environment variables into struct fields of arbitrary
 types.  It's designed with a few guiding principles:
@@ -138,7 +138,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/btubbs/envcfg"
+	"github.com/nav-inc/envcfg"
 )
 
 type myAppConfig struct {

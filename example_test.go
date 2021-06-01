@@ -6,8 +6,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/btubbs/envcfg"
 	_ "github.com/lib/pq"
+	"github.com/nav-inc/envcfg"
 )
 
 func Example() {
