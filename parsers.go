@@ -38,6 +38,7 @@ var DefaultParsers = []interface{}{
 	ParseEmailAddress,
 	ParseEmailAddressList,
 	ParseTemplate,
+	ParseBytes,
 }
 
 var (
@@ -142,4 +143,8 @@ func ParseUint64(s string) (uint64, error) {
 		return 0, err
 	}
 	return uint64(parsed), nil
+}
+
+func ParseBytes(s string) ([]byte, error) {
+	return []byte(s), nil
 }
