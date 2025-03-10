@@ -132,39 +132,31 @@ func (e *Loader) MustRegisterParser(f interface{}) {
 	}
 }
 
-// LoadFromMap loads config from the provided map into the provided struct.
-func (e *Loader) LoadFromMap(vals map[string]string, c interface{}) error {
-	// assert that c is a struct.
-	pointerType := reflect.TypeOf(c)
-	if pointerType.Kind() != reflect.Ptr {
-		return fmt.Errorf("envcfg: %v is not a pointer", c)
-	}
-
-	structType := pointerType.Elem()
-	if structType.Kind() != reflect.Struct {
-		return fmt.Errorf("envcfg: %v is not a pointer to a struct", c)
-	}
-	structVal := reflect.ValueOf(c).Elem()
-
-	// If there are multiple errors while reading config, bundle them all together so users can fix
-	// them all at once instead of with frustrating retries.
+// loadStructFields is a helper function that recursively loads values into struct fields
+func (e *Loader) loadStructFields(vals map[string]string, structType reflect.Type, structVal reflect.Value) error {
 	var errs *multierror.Error
+
 	for i := 0; i < structType.NumField(); i++ {
 		field := structType.Field(i)
 
+		// If this is an embedded struct field with no explicit field name, recurse into it
+		if field.Anonymous && field.Type.Kind() == reflect.Struct && field.Name == field.Type.Name() {
+			err := e.loadStructFields(vals, field.Type, structVal.Field(i))
+			if err != nil {
+				errs = multierror.Append(errs, err)
+			}
+			continue
+		}
+
 		tagVal, ok := field.Tag.Lookup(cfgTag)
 		if !ok {
-			// this field doesn't have our tag.  Skip.
+			// this field doesn't have our tag. Skip.
 			continue
 		}
 
 		envKeys := strings.Split(tagVal, tagSep)
 		var envDefaults []string
 
-		// if default provided, split that too and make sure they're the same length DONE
-		// make sure parserFunc has same number of inputs DONE
-		// loop over split tagval, pulling values from environment, and erroring if any are missing.
-		// pass spread list of env vars into parser
 		defaultString, defaultOK := field.Tag.Lookup(defaultTag)
 		if defaultOK {
 			envDefaults = splitDefaultTag(defaultString)
@@ -199,7 +191,7 @@ func (e *Loader) LoadFromMap(vals map[string]string, c interface{}) error {
 		for i, envKey := range envKeys {
 			stringVal, ok := vals[envKey]
 			if !ok {
-				// could not find the string we're looking for in map.  is there a default?
+				// could not find the string we're looking for in map. is there a default?
 				if defaultOK {
 					stringVal = envDefaults[i]
 				} else {
@@ -233,6 +225,23 @@ func (e *Loader) LoadFromMap(vals map[string]string, c interface{}) error {
 	return errs.ErrorOrNil()
 }
 
+// LoadFromMap loads config from the provided map into the provided struct.
+func (e *Loader) LoadFromMap(vals map[string]string, c interface{}) error {
+	// assert that c is a struct.
+	pointerType := reflect.TypeOf(c)
+	if pointerType.Kind() != reflect.Ptr {
+		return fmt.Errorf("envcfg: %v is not a pointer", c)
+	}
+
+	structType := pointerType.Elem()
+	if structType.Kind() != reflect.Struct {
+		return fmt.Errorf("envcfg: %v is not a pointer to a struct", c)
+	}
+	structVal := reflect.ValueOf(c).Elem()
+
+	return e.loadStructFields(vals, structType, structVal)
+}
+
 // Load loads config from the environment into the provided struct.
 func (e *Loader) Load(c interface{}) error {
 	return e.LoadFromMap(envListToMap(os.Environ()), c)
@@ -258,11 +267,11 @@ func splitDefaultTag(tag string) []string {
 	for _, char := range tag {
 		if string(char) == tagSep {
 			if lastChar == backSlash {
-				// escaped separator.  Remove the escape, and make the separator part of the subString
+				// escaped separator. Remove the escape, and make the separator part of the subString
 				subString = subString[:len(subString)-1]
 				subString += string(char)
 			} else {
-				// real separator.  End the subString.
+				// real separator. End the subString.
 				out = append(out, subString)
 				subString = ""
 			}

@@ -339,7 +339,7 @@ func TestBadStructs(t *testing.T) {
 		{
 			desc:  "no parser for this type",
 			strct: &quux{},
-			err:   "1 error occurred:\n\n* no parser function found for type envcfg.baz",
+			err:   "1 error occurred:\n\n* no parser function found for type envcfg.baz (field B)",
 		},
 	}
 
@@ -364,4 +364,129 @@ func TestEnvListToMap(t *testing.T) {
 		"QUUX": "",
 	}
 	assert.Equal(t, expected, envListToMap(ss))
+}
+
+func TestNestedStructs(t *testing.T) {
+	// Define some nested config types
+	type DatabaseConfig struct {
+		Host     string `env:"DB_HOST"`
+		Port     int    `env:"DB_PORT"`
+		Password string `env:"DB_PASSWORD" default:"default_pass"`
+	}
+
+	type LogConfig struct {
+		Level  string `env:"LOG_LEVEL"`
+		Format string `env:"LOG_FORMAT" default:"json"`
+	}
+
+	type Config struct {
+		DatabaseConfig        // embedded without field name
+		LogConfig             // embedded without field name
+		APIKey         string `env:"API_KEY"`
+	}
+
+	tt := []struct {
+		desc     string
+		input    map[string]string
+		expected Config
+		errMsg   string
+	}{
+		{
+			desc: "successful nested struct loading",
+			input: map[string]string{
+				"DB_HOST":   "localhost",
+				"DB_PORT":   "5432",
+				"LOG_LEVEL": "debug",
+				"API_KEY":   "secret123",
+			},
+			expected: Config{
+				DatabaseConfig: DatabaseConfig{
+					Host:     "localhost",
+					Port:     5432,
+					Password: "default_pass", // from default tag
+				},
+				LogConfig: LogConfig{
+					Level:  "debug",
+					Format: "json", // from default tag
+				},
+				APIKey: "secret123",
+			},
+		},
+		{
+			desc: "missing required field in nested struct",
+			input: map[string]string{
+				"DB_HOST": "localhost",
+				"API_KEY": "secret123",
+			},
+			errMsg: "2 errors occurred:\n\n* no DB_PORT value found, and DatabaseConfig.Port has no default\n* no LOG_LEVEL value found, and LogConfig.Level has no default",
+		},
+	}
+
+	for _, tc := range tt {
+		var conf Config
+		err := LoadFromMap(tc.input, &conf)
+
+		if tc.errMsg != "" {
+			assert.Equal(t, tc.errMsg, err.Error(), tc.desc)
+		} else {
+			assert.Nil(t, err, tc.desc)
+			assert.Equal(t, tc.expected, conf, tc.desc)
+		}
+	}
+}
+
+func TestNestedStructEdgeCases(t *testing.T) {
+	// Test struct with multiple levels of nesting
+	type GrandchildConfig struct {
+		Setting string `env:"GRANDCHILD_SETTING"`
+	}
+
+	type ChildConfig struct {
+		GrandchildConfig        // embedded
+		ChildSetting     string `env:"CHILD_SETTING"`
+	}
+
+	type ParentConfig struct {
+		ChildConfig          // embedded
+		ParentSetting string `env:"PARENT_SETTING"`
+	}
+
+	t.Run("multi-level nesting", func(t *testing.T) {
+		var conf ParentConfig
+		input := map[string]string{
+			"GRANDCHILD_SETTING": "value1",
+			"CHILD_SETTING":      "value2",
+			"PARENT_SETTING":     "value3",
+		}
+
+		err := LoadFromMap(input, &conf)
+		assert.Nil(t, err)
+		assert.Equal(t, "value1", conf.GrandchildConfig.Setting)
+		assert.Equal(t, "value2", conf.ChildSetting)
+		assert.Equal(t, "value3", conf.ParentSetting)
+	})
+
+	// Test struct with both embedded and non-embedded fields
+	type MixedConfig struct {
+		ChildConfig             // embedded
+		Named       ChildConfig // not embedded - has field name
+		Direct      string      `env:"DIRECT_SETTING"`
+	}
+
+	t.Run("mixed embedded and non-embedded", func(t *testing.T) {
+		var conf MixedConfig
+		input := map[string]string{
+			"GRANDCHILD_SETTING": "value1",
+			"CHILD_SETTING":      "value2",
+			"DIRECT_SETTING":     "value3",
+		}
+
+		err := LoadFromMap(input, &conf)
+		assert.Nil(t, err)
+		assert.Equal(t, "value1", conf.GrandchildConfig.Setting)
+		assert.Equal(t, "value2", conf.ChildSetting)
+		assert.Equal(t, "value3", conf.Direct)
+		// Named field should not be populated
+		assert.Equal(t, "", conf.Named.ChildSetting)
+	})
 }
