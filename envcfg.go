@@ -37,7 +37,7 @@ func New() (*Loader, error) {
 // Empty returns a Loader without any parsers enabled.
 func Empty() *Loader {
 	ec := &Loader{}
-	ec.parsers = map[reflect.Type]parser{}
+	ec.parsers = map[parserKey]parser{}
 	return ec
 }
 
@@ -49,12 +49,17 @@ type parser struct {
 	numArgs int
 }
 
+type parserKey struct {
+	typ     reflect.Type
+	numArgs int
+}
+
 // Loader is a helper for reading values from environment variables (or a map[string]string),
 // converting them to Go types, and setting their values to fields on a user-provided struct.
 type Loader struct {
 	// a map from reflect types to functions that can take a string and return a
 	// reflect value of that type.
-	parsers map[reflect.Type]parser
+	parsers map[parserKey]parser
 }
 
 // RegisterParser takes a func (string) (<anytype>, error) and registers it on the Loader as
@@ -95,10 +100,17 @@ func (e *Loader) RegisterParser(f interface{}) error {
 			"envcfg: parser's last return value should be error. %s's last return value is %v",
 			fname, t.Out(1))
 	}
-	_, alreadyRegistered := e.parsers[t.Out(0)]
+	key := parserKey{
+		typ:     t.Out(0),
+		numArgs: t.NumIn(),
+	}
+	_, alreadyRegistered := e.parsers[key]
 	if alreadyRegistered {
-		return fmt.Errorf("envcfg: a parser has already been registered for the %v type.  cannot also register %s",
-			t.Out(0), fname,
+		return fmt.Errorf(
+			"envcfg: a parser has already been registered for the %v type with %d inputs.  cannot also register %s",
+			t.Out(0),
+			t.NumIn(),
+			fname,
 		)
 	}
 
@@ -121,7 +133,7 @@ func (e *Loader) RegisterParser(f interface{}) error {
 		}
 		return returnvals[0], nil
 	}
-	e.parsers[t.Out(0)] = parser{f: wrapped, numArgs: t.NumIn()}
+	e.parsers[key] = parser{f: wrapped, numArgs: t.NumIn()}
 	return nil
 }
 
@@ -168,7 +180,11 @@ func (e *Loader) loadStructFields(vals map[string]string, structType reflect.Typ
 			}
 		}
 
-		parser, ok := e.parsers[field.Type]
+		key := parserKey{
+			typ:     field.Type,
+			numArgs: len(envKeys),
+		}
+		parser, ok := e.parsers[key]
 		if !ok {
 			errs = multierror.Append(
 				errs,
