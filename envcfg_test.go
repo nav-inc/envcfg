@@ -142,18 +142,24 @@ func TestParserShape(t *testing.T) {
 		},
 		{
 			desc:   "overwriting parser forbidden",
-			parser: func(s string) (foo, error) { return foo{}, nil },
-			err:    errors.New("envcfg: a parser has already been registered for the envcfg.foo type.  cannot also register github.com/nav-inc/envcfg.TestParserShape.func5"),
+			parser: func(x, y, z string) (foo, error) { return foo{}, nil },
+			err:    errors.New("envcfg: a parser has already been registered for the envcfg.foo type with 3 inputs.  cannot also register github.com/nav-inc/envcfg.TestParserShape.func5"),
 		},
 		{
 			desc:   "success with type alias",
 			parser: func(s string) (bar, error) { return bar{}, nil },
 		},
+		{
+			desc:   "success with different number of inputs",
+			parser: func(a, b, c, d string) (foo, error) { return foo{}, nil },
+		},
 	}
 
 	for _, tc := range tt {
-		err := RegisterParser(tc.parser)
-		assert.Equal(t, tc.err, err, tc.desc)
+		t.Run(tc.desc, func(t *testing.T) {
+			err := RegisterParser(tc.parser)
+			assert.Equal(t, tc.err, err, tc.desc)
+		})
 	}
 }
 
@@ -260,8 +266,8 @@ func TestMismatchedParserAndTags(t *testing.T) {
 	}, &conf)
 	assert.Equal(
 		t,
-		errors.New("envcfg: loader for envcfg.myString type takes 3 args, but A,B lists 2 variables"),
-		err,
+		"1 error occurred:\n\n* no parser function found for type envcfg.myString (field F)",
+		err.Error(),
 	)
 }
 
